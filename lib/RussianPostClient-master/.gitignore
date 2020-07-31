@@ -1,0 +1,8 @@
+*.dll
+*.suo
+*.user
+*.vspscc
+*.log
+
+obj/
+[Bb]in
