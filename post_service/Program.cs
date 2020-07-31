@@ -180,17 +180,17 @@ namespace post_service
 
             string _response;
 
-            //_response = getOperationHistory(barcode, userLogin, userPassword); // получаем ответ SOAP сервиса в виде XML
-            //Console.WriteLine(_response);
-            //File.WriteAllText(@"D:\Info " + DateTime.Now.ToString().Replace('.', '_').Replace(':', '_') + "​.xml", _response);
+            _response = getOperationHistory(barcode, userLogin, userPassword); // получаем ответ SOAP сервиса в виде XML
+            Console.WriteLine(_response);
+            File.WriteAllText(@"D:\Info getOperationHistory " + DateTime.Now.ToString().Replace('.', '_').Replace(':', '_') + "​.xml", _response);
 
-            //_response = getTicket(barcodes, adminLogin, adminPassword); // получаем ответ SOAP сервиса в виде XML
-            //Console.WriteLine(_response);
-            //File.WriteAllText(@"D:\Info " + DateTime.Now.ToString().Replace('.', '_').Replace(':', '_') + "​.xml", _response);
+            _response = getTicket(barcodes, adminLogin, adminPassword); // получаем ответ SOAP сервиса в виде XML
+            Console.WriteLine(_response);
+            File.WriteAllText(@"D:\Info getTicket " + DateTime.Now.ToString().Replace('.', '_').Replace(':', '_') + "​.xml", _response);
 
-            //_response = getResponseByTicket(ticket2, adminLogin, adminPassword); // получаем ответ SOAP сервиса в виде XML
-            //Console.WriteLine(_response);
-            //File.WriteAllText(@"D:\Info " + DateTime.Now.ToString().Replace('.', '_').Replace(':', '_') + "​.xml", _response);
+            _response = getResponseByTicket(ticket2, adminLogin, adminPassword); // получаем ответ SOAP сервиса в виде XML
+            Console.WriteLine(_response);
+            File.WriteAllText(@"D:\Info GetResponseByTicket " + DateTime.Now.ToString().Replace('.', '_').Replace(':', '_') + "​.xml", _response);
 
             Console.WriteLine("Для завершения работы нажмите Enter...");
             Console.ReadLine();
