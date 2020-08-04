@@ -9,14 +9,19 @@ using System;
 using System.IO;
 using System.Net;
 using System.Xml;
+using post_service.Models;
 
 namespace post_service
 {
     class Program
     {
-        /// <summary> Метод отправки запроса к SOAP сервису и получения от него ответа </summary>
-        /// <returns>Метод возвращает ответ SOAP сервиса в виде XML</returns>
-        private static string getOperationHistory(string barcode, string login, string password)
+        /// <summary>
+        /// Получение информации о конкретном отправлении
+        /// </summary>
+        /// <param name="barcode">Код отправления</param>
+        /// <param name="auth">Данные для авторизации</param>
+        /// <returns>Информация о конкретном отправлении</returns>
+        private static string getOperationHistory(Barcode barcode, AuthInfo auth)
         {
             string textRequest =
                 $@"<soap:Envelope xmlns:soap=""http://www.w3.org/2003/05/soap-envelope""
@@ -28,13 +33,13 @@ namespace post_service
                         <oper:getOperationHistory>
                         <!--Optional:-->
                             <data:OperationHistoryRequest>
-                                <data:Barcode>{barcode}</data:Barcode>
+                                <data:Barcode>{barcode.Code}</data:Barcode>
                                 <data:MessageType>0</data:MessageType>
                                 <data:Language>RUS</data:Language>
                             </data:OperationHistoryRequest>
                             <data:AuthorizationHeader>
-                                <data:login>{login}</data:login>
-                                <data:password>{password}</data:password>
+                                <data:login>{auth.Login}</data:login>
+                                <data:password>{auth.Password}</data:password>
                             </data:AuthorizationHeader>
                         </oper:getOperationHistory>
                     </soap:Body>
@@ -66,17 +71,19 @@ namespace post_service
             return _result;
         }
 
-        /// <summary> Метод отправки запроса к SOAP сервису и получения от него ответа </summary>
-        /// <returns>Метод возвращает ответ SOAP сервиса в виде XML</returns>
-        private static string getTicket(List<string> barcodes, string login, string password)
+        /// <summary>
+        /// Получение билета на подготовку информации по списку идентификаторов отправлений
+        /// </summary>
+        /// <param name="barcodes">Список идентификаторов отправлений</param>
+        /// <param name="auth">Данные для авторизации</param>
+        /// <returns>Билет на подготовку информации</returns>
+        private static Ticket getTicket(List<Barcode> barcodes, AuthInfo auth)
         {
             //Переименовать переменные barcodes - их легко спутать
-            string strBarcodes = @"<fcl:Item Barcode = ""RA644000001RU""/>
-                                <fcl:Item Barcode = ""LO754799163CN""/>";
-            strBarcodes = "";
-            foreach(string barcode in barcodes)
+            string strBarcodes = "";
+            foreach(Barcode barcode in barcodes)
             {
-                strBarcodes += $@"<fcl:Item Barcode = ""{barcode}""/>";
+                strBarcodes += $@"<fcl:Item Barcode = ""{barcode.Code}""/>";
             }
             string textRequest =
                 $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" 
@@ -88,8 +95,8 @@ namespace post_service
                             <request>
                                 {strBarcodes}
                             </request>
-                            <login>{login}</login>
-                            <password>{password}</password>
+                            <login>{auth.Login}</login>
+                            <password>{auth.Password}</password>
                             <language>RUS</language>
                         </pos:ticketRequest>
                     </soapenv:Body>
@@ -117,13 +124,21 @@ namespace post_service
             // читаем тело
             WebResponse _response = _request.GetResponse();
             StreamReader _streamReader = new StreamReader(_response.GetResponseStream());
-            string _result = _streamReader.ReadToEnd(); // переменная в которую пишется результат (ответ) сервиса
-            return _result;
+
+            XmlDocument document = new XmlDocument();
+            document.LoadXml(_streamReader.ReadToEnd());
+            Ticket ticket = new Ticket(document.DocumentElement.InnerText);
+
+            return ticket;
         }
 
-        /// <summary> Метод отправки запроса к SOAP сервису и получения от него ответа </summary>
-        /// <returns>Метод возвращает ответ SOAP сервиса в виде XML</returns>
-        private static string getResponseByTicket(string ticket, string login, string password)
+        /// <summary>
+        /// Получение информации об отправлениях по ранее полученному билету
+        /// </summary>
+        /// <param name="ticket">Билет на подготовку информации</param>
+        /// <param name="auth">Данные для авторизации</param>
+        /// <returns>Информация об отправлениях из списка</returns>
+        private static string getResponseByTicket(Ticket ticket, AuthInfo auth)
         {
             string textRequest =
                 $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" 
@@ -131,9 +146,9 @@ namespace post_service
                     <soapenv:Header/>
                     <soapenv:Body>
                         <pos:answerByTicketRequest>
-                            <ticket>{ticket}</ticket>
-                            <login>{login}</login>
-                            <password>{password}</password>
+                            <ticket>{ticket.Value}</ticket>
+                            <login>{auth.Login}</login>
+                            <password>{auth.Password}</password>
                         </pos:answerByTicketRequest>
                     </soapenv:Body>
                 </soapenv:Envelope>";
@@ -166,29 +181,25 @@ namespace post_service
 
         static void Main()
         {
-            string barcode = "LO754799163CN";
-            List<string> barcodes = new List<string>() { "LO754799163CN", "RA644000001RU" };
+            Barcode barcode1 = new Barcode("LO754799163CN");
+            Barcode barcode2 = new Barcode("RA644000001RU");
+            List<Barcode> barcodes = new List<Barcode>() { barcode1, barcode2 };
 
-            string ticket1 = "20200731152103929EJYIDHIJTZDVND";
-            string ticket2 = "20200731104356988EJYIDHIJTZDVND";
+            Ticket ticket1 = new Ticket("20200731152103929EJYIDHIJTZDVND");
+            Ticket ticket2 = new Ticket("20200731104356988EJYIDHIJTZDVND");
 
-            string userLogin = "RbQGQzMkvBLUCc";
-            string userPassword = "GWeCJeA0Cw7s";
-
-            string adminLogin = "EJyiDhijTZDvND";
-            string adminPassword = "D12mQ61jAJBS";
-
+            AuthInfo admin = new AuthInfo("EJyiDhijTZDvND", "D12mQ61jAJBS");
+            AuthInfo user = new AuthInfo("RbQGQzMkvBLUCc", "GWeCJeA0Cw7s");
+            
             string _response;
 
-            _response = getOperationHistory(barcode, userLogin, userPassword); // получаем ответ SOAP сервиса в виде XML
+            _response = getOperationHistory(barcode1, user); // получаем ответ SOAP сервиса в виде XML
             Console.WriteLine(_response);
             File.WriteAllText(@"D:\Info getOperationHistory " + DateTime.Now.ToString().Replace('.', '_').Replace(':', '_') + "​.xml", _response);
 
-            _response = getTicket(barcodes, adminLogin, adminPassword); // получаем ответ SOAP сервиса в виде XML
-            Console.WriteLine(_response);
-            File.WriteAllText(@"D:\Info getTicket " + DateTime.Now.ToString().Replace('.', '_').Replace(':', '_') + "​.xml", _response);
-
-            _response = getResponseByTicket(ticket2, adminLogin, adminPassword); // получаем ответ SOAP сервиса в виде XML
+            Ticket ticket = getTicket(barcodes, admin); // получаем ответ SOAP сервиса в виде XML
+            
+            _response = getResponseByTicket(ticket, admin); // получаем ответ SOAP сервиса в виде XML
             Console.WriteLine(_response);
             File.WriteAllText(@"D:\Info GetResponseByTicket " + DateTime.Now.ToString().Replace('.', '_').Replace(':', '_') + "​.xml", _response);
 
