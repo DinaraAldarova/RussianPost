@@ -4,8 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace post_service.Models.Address
+namespace post_service.Models.Parameters.Address
 {
+    /// <summary>
+    /// Используется для атрибутов MailDirect, CountryFrom, CountryOper класса AddressParameters
+    /// </summary>
     public class Country
     {
         /// <summary>
@@ -33,6 +36,14 @@ namespace post_service.Models.Address
         /// </summary>
         public string NameEN { get; private set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id">Код страны</param>
+        /// <param name="code2A">Двухбуквенный идентификатор страны</param>
+        /// <param name="code3A">Трехбуквенный идентификатор страны</param>
+        /// <param name="nameRu">Российское название страны</param>
+        /// <param name="nameEN">Международное название страны</param>
         public Country(string id, string code2A, string code3A, string nameRu, string nameEN)
         {
             Id = id;

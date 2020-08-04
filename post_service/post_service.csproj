@@ -79,11 +79,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\Parameters\Address\City.cs" />
     <Compile Include="Models\Barcode.cs" />
     <Compile Include="Models\Operation.cs" />
+    <Compile Include="Models\Parameters\Category.cs" />
+    <Compile Include="Models\Parameters\FinanceParameters.cs" />
+    <Compile Include="Models\Parameters\ItemParameters.cs" />
+    <Compile Include="Models\Parameters\OperationParameters.cs" />
+    <Compile Include="Models\Parameters\UserParameters.cs" />
     <Compile Include="Models\Ticket.cs" />
-    <Compile Include="Models\Address\AddressParameters.cs" />
-    <Compile Include="Models\Address\Country.cs" />
+    <Compile Include="Models\Parameters\AddressParameters.cs" />
+    <Compile Include="Models\Parameters\Address\Country.cs" />
     <Compile Include="AuthInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
