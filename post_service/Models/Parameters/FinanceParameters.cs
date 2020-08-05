@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace post_service.Models.Parameters
 {
@@ -47,6 +48,20 @@ namespace post_service.Models.Parameters
         public string CustomDuty { get; private set; }
 
         /// <summary>
+        /// Задает значения по-умолчанию для пустого объекта
+        /// </summary>
+        public FinanceParameters()
+        {
+            Payment = "";
+            Value = "";
+            MassRate = "";
+            InsrRate = "";
+            AirRate = "";
+            Rate = "";
+            CustomDuty = "";
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="payment">Сумма наложенного платежа в копейках</param>
@@ -65,6 +80,50 @@ namespace post_service.Models.Parameters
             AirRate = airRate;
             Rate = rate;
             CustomDuty = customDuty;
+        }
+
+        /// <summary>
+        /// Создание параметров из XML-структуры FinanceParameters
+        /// </summary>
+        /// <param name="FinanceParameters">XML-структура FinanceParameters</param>
+        public FinanceParameters(XmlNode FinanceParameters)
+        {
+            Payment = "";
+            Value = "";
+            MassRate = "";
+            InsrRate = "";
+            AirRate = "";
+            Rate = "";
+            CustomDuty = "";
+            foreach (XmlNode parameter in FinanceParameters)
+            {
+                switch (parameter.Name)
+                {
+                    case "ns3:Payment":
+                        Payment = parameter.InnerText;
+                        break;
+                    case "ns3:Value":
+                        Value = parameter.InnerText;
+                        break;
+                    case "ns3:MassRate":
+                        MassRate = parameter.InnerText;
+                        break;
+                    case "ns3:InsrRate":
+                        InsrRate = parameter.InnerText;
+                        break;
+                    case "ns3:AirRate":
+                        AirRate = parameter.InnerText;
+                        break;
+                    case "ns3:Rate":
+                        Rate = parameter.InnerText;
+                        break;
+                    case "ns3:CustomDuty":
+                        CustomDuty = parameter.InnerText;
+                        break;
+                    default:
+                        throw new Exception();
+                }
+            }
         }
     }
 }

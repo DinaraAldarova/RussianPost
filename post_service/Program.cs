@@ -19,7 +19,7 @@ namespace post_service
         /// <param name="barcode">Код отправления</param>
         /// <param name="auth">Данные для авторизации</param>
         /// <returns>Информация о конкретном отправлении</returns>
-        private static string getOperationHistory(Barcode barcode, AuthInfo auth)
+        private static List<Operation> getOperationHistory(Barcode barcode, AuthInfo auth)
         {
             string textRequest =
                 $@"<soap:Envelope xmlns:soap=""http://www.w3.org/2003/05/soap-envelope""
@@ -65,8 +65,23 @@ namespace post_service
             // читаем тело
             WebResponse _response = _request.GetResponse();
             StreamReader _streamReader = new StreamReader(_response.GetResponseStream());
-            string _result = _streamReader.ReadToEnd(); // переменная в которую пишется результат (ответ) сервиса
-            return _result;
+            
+            //Разбор XML
+            XmlDocument document = new XmlDocument();
+            document.LoadXml(_streamReader.ReadToEnd());
+            XmlNode envelope = document.DocumentElement;
+            XmlNode body = envelope.FirstChild;
+            XmlNode getOperationHistoryResponse = body.FirstChild;
+            XmlNode operationHistoryData = getOperationHistoryResponse.FirstChild;
+
+            //Создание объектов, хранящих данные из XML
+            List<Operation> operations = new List<Operation>();
+            foreach (XmlNode historyRecord in operationHistoryData)
+            {
+                Operation operation = new Operation(historyRecord);
+                operations.Add(operation);
+            }
+            return operations;
         }
 
         /// <summary>
@@ -136,7 +151,7 @@ namespace post_service
         /// <param name="ticket">Билет на подготовку информации</param>
         /// <param name="auth">Данные для авторизации</param>
         /// <returns>Информация об отправлениях из списка</returns>
-        private static string getResponseByTicket(Ticket ticket, AuthInfo auth)
+        private static List<Item> getResponseByTicket(Ticket ticket, AuthInfo auth)
         {
             string textRequest =
                 $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" 
@@ -173,8 +188,23 @@ namespace post_service
             // читаем тело
             WebResponse _response = _request.GetResponse();
             StreamReader _streamReader = new StreamReader(_response.GetResponseStream());
-            string _result = _streamReader.ReadToEnd(); // переменная в которую пишется результат (ответ) сервиса
-            return _result;
+
+            //Разбор XML
+            XmlDocument document = new XmlDocument();
+            document.LoadXml(_streamReader.ReadToEnd());
+            XmlNode envelope = document.DocumentElement;
+            XmlNode body = envelope.FirstChild;
+            XmlNode answerByTicketResponse = body.FirstChild;
+            XmlNode value = answerByTicketResponse.FirstChild;
+
+            //Создание объектов, хранящих данные из XML
+            List<Item> items = new List<Item>();
+            foreach (XmlNode xmlItem in value)
+            {
+                Item item = new Item(xmlItem);
+                items.Add(item);
+            }
+            return items;
         }
 
         static void Main()
@@ -183,26 +213,43 @@ namespace post_service
             Barcode barcode2 = new Barcode("RA644000001RU");
             List<Barcode> barcodes = new List<Barcode>() { barcode1, barcode2 };
 
-            Ticket ticket1 = new Ticket("20200731152103929EJYIDHIJTZDVND");
-            Ticket ticket2 = new Ticket("20200731104356988EJYIDHIJTZDVND");
-
             AuthInfo admin = new AuthInfo("EJyiDhijTZDvND", "D12mQ61jAJBS");
             AuthInfo user = new AuthInfo("RbQGQzMkvBLUCc", "GWeCJeA0Cw7s");
-            
-            string _response;
 
-            _response = getOperationHistory(barcode1, user); // получаем ответ SOAP сервиса в виде XML
-            Console.WriteLine(_response);
-            File.WriteAllText(@"D:\Info getOperationHistory " + DateTime.Now.ToString().Replace('.', '_').Replace(':', '_') + "​.xml", _response);
+            var operations1 = getOperationHistory(barcode1, user);
+            var operations2 = getOperationHistory(barcode2, user);
 
-            Ticket ticket = getTicket(barcodes, admin); // получаем ответ SOAP сервиса в виде XML
-            
-            _response = getResponseByTicket(ticket, admin); // получаем ответ SOAP сервиса в виде XML
-            Console.WriteLine(_response);
-            File.WriteAllText(@"D:\Info GetResponseByTicket " + DateTime.Now.ToString().Replace('.', '_').Replace(':', '_') + "​.xml", _response);
+            Ticket ticket = getTicket(barcodes, admin);
+            var items = getResponseByTicket(ticket, admin);
+
+            for (int i = 0; i < operations2.Count; i++)
+            {
+                bool isTrue = false;
+                if (operations2[i].AddressParameters.OperationAddress.Index == items[0].operations[i].AddressParameters.OperationAddress.Index)
+                    if (operations2[i].OperationParameters.OperType.Id == items[0].operations[i].OperationParameters.OperType.Id)
+                        if (operations2[i].OperationParameters.OperType.Name == items[0].operations[i].OperationParameters.OperType.Name)
+                            if (operations2[i].OperationParameters.OperAttr.Id == items[0].operations[i].OperationParameters.OperAttr.Id)
+                                //if (operations2[i].OperationParameters.OperDate == items[0].operations[i].OperationParameters.OperDate)
+                                    isTrue = true;
+                if (!isTrue)
+                    throw new Exception();
+            }
+
+            for (int i = 0; i < operations1.Count; i++)
+            {
+                bool isTrue = false;
+                //if (operations1[i].AddressParameters.OperationAddress.Index == items[1].operations[i].AddressParameters.OperationAddress.Index) //для Китая в одиночном запросе все в описании, а для пакетного - индекс в поле индекса
+                    if (operations1[i].OperationParameters.OperType.Id == items[1].operations[i].OperationParameters.OperType.Id)
+                        if (operations1[i].OperationParameters.OperType.Name == items[1].operations[i].OperationParameters.OperType.Name)
+                            if (operations1[i].OperationParameters.OperAttr.Id == items[1].operations[i].OperationParameters.OperAttr.Id)
+                                //if (operations1[i].OperationParameters.OperDate == items[1].operations[i].OperationParameters.OperDate) //разный формат
+                                    isTrue = true;
+                if (!isTrue)
+                    throw new Exception();
+            }
 
             Console.WriteLine("Для завершения работы нажмите Enter...");
-            Console.ReadLine();
+            //Console.ReadLine();
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace post_service.Models.Parameters
 {
@@ -27,6 +28,16 @@ namespace post_service.Models.Parameters
         public string Rcpn { get; private set; }
 
         /// <summary>
+        /// Задает значения по-умолчанию для пустого объекта
+        /// </summary>
+        public UserParameters()
+        {
+            SendCtg = new Category();
+            Sndr = "";
+            Rcpn = "";
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="sendCtg">Содержит информацию о категории отправителя</param>
@@ -37,6 +48,34 @@ namespace post_service.Models.Parameters
             SendCtg = sendCtg;
             Sndr = sndr;
             Rcpn = rcpn;
+        }
+
+        /// <summary>
+        /// Создание параметров из XML-структуры UserParameters
+        /// </summary>
+        /// <param name="UserParameters">XML-структура UserParameters</param>
+        public UserParameters(XmlNode UserParameters)
+        {
+            SendCtg = new Category();
+            Sndr = "";
+            Rcpn = "";
+            foreach (XmlNode parameter in UserParameters)
+            {
+                switch (parameter.Name)
+                {
+                    case "ns3:SendCtg":
+                        SendCtg = new Category(parameter);
+                        break;
+                    case "ns3:Sndr":
+                        Sndr = parameter.InnerText;
+                        break;
+                    case "ns3:Rcpn":
+                        Rcpn = parameter.InnerText;
+                        break;
+                    default:
+                        throw new Exception();
+                }
+            }
         }
     }
 }

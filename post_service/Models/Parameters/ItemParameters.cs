@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace post_service.Models.Parameters
 {
@@ -72,6 +73,25 @@ namespace post_service.Models.Parameters
         public string MaxMassEn { get; private set; }
 
         /// <summary>
+        /// Задает значения по-умолчанию для пустого объекта
+        /// </summary>
+        public ItemParameters()
+        {
+            Barcode = "";
+            Internum = "";
+            ValidRuType = "";
+            ValidEnType = "";
+            ComplexItemName = "";
+            MailRank = new Category();
+            PostMark = new Category();
+            MailType = new Category();
+            MailCtg = new Category();
+            Mass = "";
+            MaxMassRu = "";
+            MaxMassEn = "";
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="barcode">Идентификатор почтового отправления, текущий для данной операции</param>
@@ -100,6 +120,70 @@ namespace post_service.Models.Parameters
             Mass = mass;
             MaxMassRu = maxMassRu;
             MaxMassEn = maxMassEn;
+        }
+
+        /// <summary>
+        /// Создание параметров из XML-структуры ItemParameters
+        /// </summary>
+        /// <param name="ItemParameters">XML-структура ItemParameters</param>
+        public ItemParameters(XmlNode ItemParameters)
+        {
+            Barcode = "";
+            Internum = "";
+            ValidRuType = "";
+            ValidEnType = "";
+            ComplexItemName = "";
+            MailRank = new Category();
+            PostMark = new Category();
+            MailType = new Category();
+            MailCtg = new Category();
+            Mass = "";
+            MaxMassRu = "";
+            MaxMassEn = "";
+            foreach (XmlNode parameter in ItemParameters)
+            {
+                switch (parameter.Name)
+                {
+                    case "ns3:Barcode":
+                        Barcode = parameter.InnerText;
+                        break;
+                    case "ns3:Internum":
+                        Internum = parameter.InnerText;
+                        break;
+                    case "ns3:ValidRuType":
+                        ValidRuType = parameter.InnerText;
+                        break;
+                    case "ns3:ValidEnType":
+                        ValidEnType = parameter.InnerText;
+                        break;
+                    case "ns3:ComplexItemName":
+                        ComplexItemName = parameter.InnerText;
+                        break;
+                    case "ns3:MailRank":
+                        MailRank = new Category(parameter);
+                        break;
+                    case "ns3:PostMark":
+                        PostMark = new Category(parameter);
+                        break;
+                    case "ns3:MailType":
+                        MailType = new Category(parameter);
+                        break;
+                    case "ns3:MailCtg":
+                        MailCtg = new Category(parameter);
+                        break;
+                    case "ns3:Mass":
+                        Mass = parameter.InnerText;
+                        break;
+                    case "ns3:MaxMassRu":
+                        MaxMassRu = parameter.InnerText;
+                        break;
+                    case "ns3:MaxMassEn":
+                        MaxMassEn = parameter.InnerText;
+                        break;
+                    default:
+                        throw new Exception();
+                }
+            }
         }
     }
 }

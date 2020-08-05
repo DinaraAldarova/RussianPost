@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace post_service.Models.Parameters
 {
@@ -22,6 +23,15 @@ namespace post_service.Models.Parameters
         public string Name { get; private set; }
 
         /// <summary>
+        /// Задает значения по-умолчанию для пустого объекта
+        /// </summary>
+        public Category()
+        {
+            Id = "";
+            Name = "";
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="id">Код</param>
@@ -30,6 +40,30 @@ namespace post_service.Models.Parameters
         {
             Id = id;
             Name = name;
+        }
+
+        /// <summary>
+        /// Создание параметров из XML-структуры категории
+        /// </summary>
+        /// <param name="Category">XML-структура категории</param>
+        public Category(XmlNode Category)
+        {
+            Id = "";
+            Name = "";
+            foreach (XmlNode parameter in Category)
+            {
+                switch(parameter.Name)
+                {
+                    case "ns3:Id":
+                        Id = parameter.InnerText;
+                        break;
+                    case "ns3:Name":
+                        Name = parameter.InnerText;
+                        break;
+                    default:
+                        throw new Exception();
+                }
+            }
         }
     }
 }

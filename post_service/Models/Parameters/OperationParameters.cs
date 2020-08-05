@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace post_service.Models.Parameters
 {
@@ -27,6 +28,16 @@ namespace post_service.Models.Parameters
         public string OperDate { get; private set; }
 
         /// <summary>
+        /// Задает значения по-умолчанию для пустого объекта
+        /// </summary>
+        public OperationParameters()
+        {
+            OperType = new Category();
+            OperAttr = new Category();
+            OperDate = "";
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="operType">Содержит информацию об операции над отправлением</param>
@@ -37,6 +48,48 @@ namespace post_service.Models.Parameters
             OperType = operType;
             OperAttr = operAttr;
             OperDate = operDate;
+        }
+
+        /// <summary>
+        /// Создание параметров из XML-структуры OperationParameters
+        /// </summary>
+        /// <param name="OperationParameters">XML-структура OperationParameters</param>
+        public OperationParameters(XmlNode OperationParameters)
+        {
+            OperType = new Category();
+            OperAttr = new Category();
+            OperDate = "";
+            foreach (XmlNode parameter in OperationParameters)
+            {
+                switch (parameter.Name)
+                {
+                    case "ns3:OperType":
+                        OperType = new Category(parameter);
+                        break;
+                    case "ns3:OperAttr":
+                        OperAttr = new Category(parameter);
+                        break;
+                    case "ns3:OperDate":
+                        OperDate = parameter.InnerText;
+                        break;
+                    default:
+                        throw new Exception();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Создание параметров по информации, предоставленной в пакетном запросе
+        /// </summary>
+        /// <param name="OperTypeID">Код операции</param>
+        /// <param name="OperCtgID">Код атрибута</param>
+        /// <param name="OperName">Название операции</param>
+        /// <param name="DateOper">Дата и время операции (локальное)</param>
+        public OperationParameters(string OperTypeID, string OperCtgID, string OperName, string DateOper)
+        {
+            OperType = new Category(OperTypeID, OperName);
+            OperAttr = new Category(OperCtgID, "");
+            OperDate = DateOper;
         }
     }
 }

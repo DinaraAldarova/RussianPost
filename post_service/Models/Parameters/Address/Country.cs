@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace post_service.Models.Parameters.Address
 {
@@ -29,7 +30,7 @@ namespace post_service.Models.Parameters.Address
         /// <summary>
         /// Российское название страны
         /// </summary>
-        public string NameRu { get; private set; }
+        public string NameRU { get; private set; }
 
         /// <summary>
         /// Международное название страны
@@ -37,20 +38,68 @@ namespace post_service.Models.Parameters.Address
         public string NameEN { get; private set; }
 
         /// <summary>
+        /// Задает значения по-умолчанию для пустого объекта
+        /// </summary>
+        public Country()
+        {
+            Id = "";
+            Code2A = "";
+            Code3A = "";
+            NameRU = "";
+            NameEN = "";
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="id">Код страны</param>
         /// <param name="code2A">Двухбуквенный идентификатор страны</param>
         /// <param name="code3A">Трехбуквенный идентификатор страны</param>
-        /// <param name="nameRu">Российское название страны</param>
+        /// <param name="nameRU">Российское название страны</param>
         /// <param name="nameEN">Международное название страны</param>
-        public Country(string id, string code2A, string code3A, string nameRu, string nameEN)
+        public Country(string id, string code2A, string code3A, string nameRU, string nameEN)
         {
             Id = id;
             Code2A = code2A;
             Code3A = code3A;
-            NameRu = nameRu;
+            NameRU = nameRU;
             NameEN = nameEN;
+        }
+
+        /// <summary>
+        /// Создание параметров из XML-структуры страны
+        /// </summary>
+        /// <param name="Country">XML-структура страны</param>
+        public Country(XmlNode Country)
+        {
+            Id = "";
+            Code2A = "";
+            Code3A = "";
+            NameRU = "";
+            NameEN = "";
+            foreach (XmlNode parameter in Country)
+            {
+                switch (parameter.Name)
+                {
+                    case "ns3:Id":
+                        Id = parameter.InnerText;
+                        break;
+                    case "ns3:Code2A":
+                        Code2A = parameter.InnerText;
+                        break;
+                    case "ns3:Code3A":
+                        Code3A = parameter.InnerText;
+                        break;
+                    case "ns3:NameRU":
+                        NameRU = parameter.InnerText;
+                        break;
+                    case "ns3:NameEN":
+                        NameEN = parameter.InnerText;
+                        break;
+                    default:
+                        throw new Exception();
+                }
+            }
         }
     }
 }
