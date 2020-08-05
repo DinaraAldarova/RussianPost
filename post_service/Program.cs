@@ -238,7 +238,7 @@ namespace post_service
             for (int i = 0; i < operations1.Count; i++)
             {
                 bool isTrue = false;
-                //if (operations1[i].AddressParameters.OperationAddress.Index == items[1].operations[i].AddressParameters.OperationAddress.Index) //для Китая в одиночном запросе все в описании, а для пакетного - индекс в поле индекса
+                //if (operations1[i].AddressParameters.OperationAddress.Index == items[1].operations[i].AddressParameters.OperationAddress.Index) //для Китая в одиночном запросе все в описании, а для пакетного - только индекс в поле индекса
                     if (operations1[i].OperationParameters.OperType.Id == items[1].operations[i].OperationParameters.OperType.Id)
                         if (operations1[i].OperationParameters.OperType.Name == items[1].operations[i].OperationParameters.OperType.Name)
                             if (operations1[i].OperationParameters.OperAttr.Id == items[1].operations[i].OperationParameters.OperAttr.Id)
