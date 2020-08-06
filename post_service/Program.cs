@@ -207,46 +207,75 @@ namespace post_service
             return items;
         }
 
+        public static string BarcodeToString(Barcode barcode)
+        {
+            return barcode.Code;
+        }
+
+        public static Barcode StringToBarcode (string code)
+        {
+            return new Barcode(code);
+        }
+
+        public static string TicketToString(Ticket ticket)
+        {
+            return ticket.Value;
+        }
+
+        public static Ticket StringToTicket(string code)
+        {
+            return new Ticket(code);
+        }
+
+        public static int Min(int a, int b)
+        {
+            return (a < b) ? a : b;
+        }
+
+        public static void WriteTickets(AuthInfo auth)
+        {
+            List<string> strBarcodes = new List<string>(File.ReadAllLines(@"D:\Info​.txt"));
+            List<Barcode> barcodes = strBarcodes.ConvertAll(new Converter<string, Barcode>(StringToBarcode));
+            List<Ticket> tickets = new List<Ticket>(); 
+            for (int i = 0; i < barcodes.Count; i += 3000)
+            {
+                tickets.Add(getTicket(
+                    barcodes.GetRange(i, Min(barcodes.Count - i, 3000)),
+                    auth));
+            }
+            File.WriteAllLines(@"D:\Tickets.txt", tickets.ConvertAll(new Converter<Ticket, string>(TicketToString)));
+        }
+
+        public static List<Item> ReadTickets(AuthInfo auth)
+        {
+            List<string> strTickets = new List<string>(File.ReadAllLines(@"D:\Tickets.txt"));
+            List<Ticket> tickets = strTickets.ConvertAll(new Converter<string, Ticket>(StringToTicket));
+            List<Item> items = new List<Item>();
+            foreach (Ticket ticket in tickets)
+            {
+                items.AddRange(getResponseByTicket(ticket, auth));
+            }
+            return items;
+            //File.WriteAllLines(@"D:\Tickets.txt", tickets.ConvertAll(new Converter<Ticket, string>(TicketToString)));
+        }
+
         static void Main()
         {
-            Barcode barcode1 = new Barcode("LO754799163CN");
-            Barcode barcode2 = new Barcode("RA644000001RU");
-            List<Barcode> barcodes = new List<Barcode>() { barcode1, barcode2 };
+            //Barcode barcode1 = new Barcode("LO754799163CN");
+            //Barcode barcode2 = new Barcode("RA644000001RU");
+            //List<Barcode> barcodes = new List<Barcode>() { barcode1, barcode2 };
 
             AuthInfo admin = new AuthInfo("EJyiDhijTZDvND", "D12mQ61jAJBS");
             AuthInfo user = new AuthInfo("RbQGQzMkvBLUCc", "GWeCJeA0Cw7s");
 
-            var operations1 = getOperationHistory(barcode1, user);
-            var operations2 = getOperationHistory(barcode2, user);
+            //var operations1 = getOperationHistory(barcode1, user);
+            //var operations2 = getOperationHistory(barcode2, user);
 
-            Ticket ticket = getTicket(barcodes, admin);
-            var items = getResponseByTicket(ticket, admin);
+            //Ticket ticket = getTicket(strBarcodes, admin);
+            //var items = getResponseByTicket(ticket, admin);
 
-            for (int i = 0; i < operations2.Count; i++)
-            {
-                bool isTrue = false;
-                if (operations2[i].AddressParameters.OperationAddress.Index == items[0].operations[i].AddressParameters.OperationAddress.Index)
-                    if (operations2[i].OperationParameters.OperType.Id == items[0].operations[i].OperationParameters.OperType.Id)
-                        if (operations2[i].OperationParameters.OperType.Name == items[0].operations[i].OperationParameters.OperType.Name)
-                            if (operations2[i].OperationParameters.OperAttr.Id == items[0].operations[i].OperationParameters.OperAttr.Id)
-                                //if (operations2[i].OperationParameters.OperDate == items[0].operations[i].OperationParameters.OperDate)
-                                    isTrue = true;
-                if (!isTrue)
-                    throw new Exception();
-            }
-
-            for (int i = 0; i < operations1.Count; i++)
-            {
-                bool isTrue = false;
-                //if (operations1[i].AddressParameters.OperationAddress.Index == items[1].operations[i].AddressParameters.OperationAddress.Index) //для Китая в одиночном запросе все в описании, а для пакетного - только индекс в поле индекса
-                    if (operations1[i].OperationParameters.OperType.Id == items[1].operations[i].OperationParameters.OperType.Id)
-                        if (operations1[i].OperationParameters.OperType.Name == items[1].operations[i].OperationParameters.OperType.Name)
-                            if (operations1[i].OperationParameters.OperAttr.Id == items[1].operations[i].OperationParameters.OperAttr.Id)
-                                //if (operations1[i].OperationParameters.OperDate == items[1].operations[i].OperationParameters.OperDate) //разный формат
-                                    isTrue = true;
-                if (!isTrue)
-                    throw new Exception();
-            }
+            //WriteTickets(admin);
+            ReadTickets(admin);
 
             Console.WriteLine("Для завершения работы нажмите Enter...");
             //Console.ReadLine();
