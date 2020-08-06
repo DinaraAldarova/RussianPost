@@ -51,6 +51,43 @@ namespace post_service.Models
         public Item(XmlNode Item)
         {
             Barcode = Item.Attributes["Barcode"].Value;
+
+            if (Item.FirstChild.Name == "ns3:Error")
+            {
+                switch (Item.FirstChild.Attributes["ErrorTypeID"].Value)
+                {
+                    case "2":
+                        //Формат данных запроса не соответствует установленному настоящим протоколом
+                        throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        break;
+                    case "3":
+                        //Неуспешная авторизация клиента при вызове метода
+                        throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        break;
+                    case "6":
+                        //Ответ по билету ещё не готов
+                        //throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        break;
+                    case "12":
+                        //Информация о заданном идентификаторе отправления отсутствует
+                        //throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        break;
+                    case "16":
+                        //Внутренняя ошибка работы Сервиса отслеживания
+                        throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        break;
+                    case "17":
+                        //Время хранения ответа по билету истекло, ответ был удален с сервера
+                        //throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        break;
+                    default:
+                        //throw new Exception();
+                        break;
+                }
+                operations = new List<Operation>();
+                return;
+            }
+
             operations = new List<Operation>();
             foreach (XmlNode xmlOperation in Item)
             {
