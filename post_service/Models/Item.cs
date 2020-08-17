@@ -25,12 +25,18 @@ namespace post_service.Models
         public List<Operation> operations { get; private set; }
 
         /// <summary>
+        /// Готовность информации по билету
+        /// </summary>
+        public bool isReady { get; private set; }
+
+        /// <summary>
         /// Задает значения по-умолчанию для пустого объекта
         /// </summary>
         public Item()
         {
             Barcode = "";
             operations = new List<Operation>();
+            isReady = true;
         }
 
         /// <summary>
@@ -42,12 +48,13 @@ namespace post_service.Models
         {
             Barcode = barcode;
             this.operations = operations;
+            isReady = true;
         }
 
         /// <summary>
         /// Создание параметров из XML-структуры категории
         /// </summary>
-        /// <param name="Category">XML-структура категории</param>
+        /// <param name="Item">XML-структура категории</param>
         public Item(XmlNode Item)
         {
             Barcode = Item.Attributes["Barcode"].Value;
@@ -58,30 +65,37 @@ namespace post_service.Models
                 {
                     case "2":
                         //Формат данных запроса не соответствует установленному настоящим протоколом
-                        throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        /////throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        Logger.Log.Error("Формат данных запроса не соответствует протоколу |" + Item.FirstChild.Attributes["ErrorName"].Value);
                         break;
                     case "3":
                         //Неуспешная авторизация клиента при вызове метода
-                        throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        //throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        Logger.Log.Error("Неуспешная авторизация клиента при вызове метода |" + Item.FirstChild.Attributes["ErrorName"].Value);
                         break;
                     case "6":
                         //Ответ по билету ещё не готов
                         //throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        isReady = false; 
                         break;
                     case "12":
                         //Информация о заданном идентификаторе отправления отсутствует
                         //throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        Logger.Log.Error("Информация об идентификаторе отправления отсутствует |" + Item.FirstChild.Attributes["ErrorName"].Value);
                         break;
                     case "16":
                         //Внутренняя ошибка работы Сервиса отслеживания
-                        throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        //throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        Logger.Log.Error("Внутренняя ошибка работы Сервиса отслеживания |" + Item.FirstChild.Attributes["ErrorName"].Value);
                         break;
                     case "17":
                         //Время хранения ответа по билету истекло, ответ был удален с сервера
                         //throw new Exception(Item.FirstChild.Attributes["ErrorName"].Value);
+                        Logger.Log.Error("Время хранения ответа по билету истекло, ответ был удален с сервера |" + Item.FirstChild.Attributes["ErrorName"].Value);
                         break;
                     default:
                         //throw new Exception();
+                        Logger.Log.Error("Неизвестный номер ошибки |" + Item.FirstChild.Attributes["ErrorName"].Value);
                         break;
                 }
                 operations = new List<Operation>();

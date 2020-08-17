@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Xml;
 using post_service.Models;
+using Newtonsoft.Json;
+using System.Threading;
 
 namespace post_service
 {
@@ -65,7 +67,7 @@ namespace post_service
             // читаем тело
             WebResponse _response = _request.GetResponse();
             StreamReader _streamReader = new StreamReader(_response.GetResponseStream());
-            
+
             //Разбор XML
             XmlDocument document = new XmlDocument();
             document.LoadXml(_streamReader.ReadToEnd());
@@ -94,7 +96,7 @@ namespace post_service
         {
             //Переименовать переменные barcodes - их легко спутать
             string strBarcodes = "";
-            foreach(Barcode barcode in barcodes)
+            foreach (Barcode barcode in barcodes)
             {
                 strBarcodes += $@"<fcl:Item Barcode = ""{barcode.Code}""/>";
             }
@@ -207,12 +209,54 @@ namespace post_service
             return items;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="items"></param>
+        /// <returns></returns>
+        private static string getQuery(Item item)
+        {
+            string query = "";
+            if (item.operations.Count > 0)
+            {
+                Operation lastOperation = item.operations[item.operations.Count - 1];
+                if (lastOperation.OperationParameters.OperType.Id == "2")
+                //Вручение
+                {
+                    int operAttr = Convert.ToInt32(lastOperation.OperationParameters.OperAttr.Id);
+                    if (operAttr >= 1 && operAttr <= 14)
+                    {
+                        //преобразовать дату
+                        DateTime dateTime = DateTime.ParseExact(lastOperation.OperationParameters.OperDate, "dd.MM.yyyy HH:mm:ss", null);
+                        query = "update main_uin set date_delivery_addressee = '"
+                                           + dateTime.ToString("yyyy.MM.dd")
+                                           + "' where spi = '"
+                                           + item.Barcode
+                                           + "'";
+                    }
+                }
+                else if (lastOperation.OperationParameters.OperType.Id == "3" && lastOperation.OperationParameters.OperAttr.Id == "1")
+                //Возврат, истек срок хранения
+                {
+                    //преобразовать дату
+                    DateTime dateTime = DateTime.ParseExact(lastOperation.OperationParameters.OperDate, "dd.MM.yyyy HH:mm:ss", null);
+                    //запрос что, одинаковый???
+                    query = "update main_uin set date_delivery_addressee = '"
+                                       + dateTime.ToString("yyyy.MM.dd")
+                                       + "' where spi = '"
+                                       + item.Barcode
+                                       + "'";
+                }
+            }
+            return query;
+        }
+
         public static string BarcodeToString(Barcode barcode)
         {
             return barcode.Code;
         }
 
-        public static Barcode StringToBarcode (string code)
+        public static Barcode StringToBarcode(string code)
         {
             return new Barcode(code);
         }
@@ -232,31 +276,55 @@ namespace post_service
             return (a < b) ? a : b;
         }
 
-        public static void WriteTickets(AuthInfo auth)
+        public static List<Ticket> WriteTickets(AuthInfo auth)
         {
-            List<string> strBarcodes = new List<string>(File.ReadAllLines(@"D:\Info​.txt"));
+            List<string> strBarcodes = new List<string>(File.ReadAllLines(@"D:\Barcodes.txt"));
             List<Barcode> barcodes = strBarcodes.ConvertAll(new Converter<string, Barcode>(StringToBarcode));
-            List<Ticket> tickets = new List<Ticket>(); 
+            Logger.Log.Info(string.Format("Получено {0} ШПИ", barcodes.Count));
+            List <Ticket> tickets = new List<Ticket>();
             for (int i = 0; i < barcodes.Count; i += 3000)
             {
                 tickets.Add(getTicket(
                     barcodes.GetRange(i, Min(barcodes.Count - i, 3000)),
                     auth));
             }
-            File.WriteAllLines(@"D:\Tickets.txt", tickets.ConvertAll(new Converter<Ticket, string>(TicketToString)));
+            Logger.Log.Info(string.Format("Получено {0} билетов", tickets.Count));
+            //File.WriteAllLines(@"D:\Tickets.txt", tickets.ConvertAll(new Converter<Ticket, string>(TicketToString)));
+            return tickets;
         }
 
-        public static List<Item> ReadTickets(AuthInfo auth)
+        public static List<Item> ReadTickets(List<Ticket> tickets, AuthInfo auth)
         {
-            List<string> strTickets = new List<string>(File.ReadAllLines(@"D:\Tickets.txt"));
-            List<Ticket> tickets = strTickets.ConvertAll(new Converter<string, Ticket>(StringToTicket));
+            //List<string> strTickets = new List<string>(File.ReadAllLines(@"D:\Tickets.txt"));
+            //List<Ticket> tickets = strTickets.ConvertAll(new Converter<string, Ticket>(StringToTicket));
             List<Item> items = new List<Item>();
             foreach (Ticket ticket in tickets)
             {
-                items.AddRange(getResponseByTicket(ticket, auth));
+                List<Item> response = getResponseByTicket(ticket, auth);
+                while (response.Exists(x => x.isReady == false))
+                {
+                    Thread.Sleep(5000);
+                    response = getResponseByTicket(ticket, auth);
+                }
+                items.AddRange(response);
             }
+            Logger.Log.Info(string.Format("Получена информация о {0} ШПИ", items.Count));
             return items;
             //File.WriteAllLines(@"D:\Tickets.txt", tickets.ConvertAll(new Converter<Ticket, string>(TicketToString)));
+        }
+
+        public static void WriteQueries(List<Item> items)
+        {
+            List<string> queries = new List<string>();
+            foreach (Item item in items)
+            {
+                string query = getQuery(item);
+                if (!string.IsNullOrEmpty(query))
+                {
+                    queries.Add(query);
+                }
+            }
+            File.WriteAllLines(@"D:\Queries.txt", queries);
         }
 
         static void Main()
@@ -267,7 +335,7 @@ namespace post_service
 
             AuthInfo admin = new AuthInfo("EJyiDhijTZDvND", "D12mQ61jAJBS");
             AuthInfo user = new AuthInfo("RbQGQzMkvBLUCc", "GWeCJeA0Cw7s");
-
+            Logger.InitLogger();
             //var operations1 = getOperationHistory(barcode1, user);
             //var operations2 = getOperationHistory(barcode2, user);
 
@@ -275,10 +343,11 @@ namespace post_service
             //var items = getResponseByTicket(ticket, admin);
 
             //WriteTickets(admin);
-            ReadTickets(admin);
+            //List<Item> items = ReadTickets(admin);
+            //WriteQueries(items);
 
             Console.WriteLine("Для завершения работы нажмите Enter...");
-            //Console.ReadLine();
+            Console.ReadLine();
         }
     }
 }
