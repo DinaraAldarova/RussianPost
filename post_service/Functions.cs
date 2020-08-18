@@ -44,7 +44,7 @@ namespace post_service
                 SqlCommand mySQLCommand = new SqlCommand(queryString, mySQLConnection);
                 mySQLCommand.ExecuteNonQuery();
             }
-
+            Logger.Log.Info($"В базе данных обновлена информация о {queriesString.Count} ШПИ");
             mySQLConnection.Close();
         }
 
@@ -411,7 +411,6 @@ namespace post_service
                 }
             }
         }
-
 
         //Поиск праздников
         internal bool Holiday(DateTime mydate)

@@ -15,11 +15,18 @@ namespace post_service
 {
     class Program
     {
-        public static List<Ticket> GetTickets(AuthInfo auth)
+        public static List<Barcode> GetBarcodes()
         {
-            List<string> strBarcodes = new List<string>(File.ReadAllLines(@"D:\Barcodes.txt"));
-            List<Barcode> barcodes = strBarcodes.ConvertAll(new Converter<string, Barcode>(Barcode.StringToBarcode));
+            List<Barcode> barcodes = new List<Barcode>();
+
+
+
             Logger.Log.Info(string.Format("Получено {0} ШПИ", barcodes.Count));
+            return barcodes;
+        }
+
+        public static List<Ticket> GetTickets(List<Barcode> barcodes, AuthInfo auth)
+        {
             List <Ticket> tickets = new List<Ticket>();
             for (int i = 0; i < barcodes.Count; i += 3000)
             {
@@ -31,7 +38,7 @@ namespace post_service
             return tickets;
         }
 
-        public static List<Item> ReadItems(List<Ticket> tickets, AuthInfo auth)
+        public static List<Item> GetItems(List<Ticket> tickets, AuthInfo auth)
         {
             List<Item> items = new List<Item>();
             foreach (Ticket ticket in tickets)
@@ -52,7 +59,7 @@ namespace post_service
             return items;
         }
 
-        public static void GetQueries(List<Item> items)
+        public static List<string> GetQueries(List<Item> items)
         {
             List<string> queries = new List<string>();
             foreach (Item item in items)
@@ -63,8 +70,18 @@ namespace post_service
                     queries.Add(query);
                 }
             }
-            File.WriteAllLines(@"D:\Queries.txt", queries);
-            Functions.inputDataSQL(queries);
+            return queries;
+        }
+
+        public static void WriteQueriesToFile(List<string> queries, string path)
+        {
+            File.WriteAllLines(path, queries);
+        }
+
+        public static List<string> ReadQueriesFromFile(string path)
+        {
+            List<string> queries = new List<string>(File.ReadAllLines(path));
+            return queries;
         }
 
         static void Main()
@@ -73,13 +90,25 @@ namespace post_service
             AuthInfo user = new AuthInfo("RbQGQzMkvBLUCc", "GWeCJeA0Cw7s");
             Logger.InitLogger();
 
-            List<Ticket> tickets;
-            //tickets = GetTickets(admin);
-            //Ticket.WriteTicketsToFile(tickets, @"D:\Tickets.txt");
-            tickets = Ticket.ReadTicketsFromFile(@"D:\Tickets.txt");
+            List<Barcode> barcodes;
+            barcodes = GetBarcodes();
+            Barcode.WriteBarcodesToFile(barcodes, @"D:\Barcodes.txt");
+            //barcodes = Barcode.ReadBarcodesFromFile(@"D:\Barcode.txt");
 
-            List<Item> items = ReadItems(tickets, admin);
-            GetQueries(items);
+            List<Ticket> tickets;
+            tickets = GetTickets(barcodes, admin);
+            Ticket.WriteTicketsToFile(tickets, @"D:\Tickets.txt");
+            //tickets = Ticket.ReadTicketsFromFile(@"D:\Tickets.txt");
+
+            List<Item> items = GetItems(tickets, admin);
+            //не сделала запись в файл для этих элементов
+
+            List<string> queries;
+            queries = GetQueries(items);
+            WriteQueriesToFile(queries, @"D:\Queries.txt");
+            //queries = ReadQueriesFromFile(@"D:\Queries.txt");
+
+            Functions.inputDataSQL(queries);
 
             Console.WriteLine("Для завершения работы нажмите Enter...");
             Console.ReadLine();
