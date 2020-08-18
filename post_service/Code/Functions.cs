@@ -1,84 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace post_service
+namespace post_service.Code
 {
-    public class Functions
+    public static class Functions
     {
-        //Подключение к БД
-        public static string connString = "Data Source=172.16.80.13,1433;Initial Catalog=test;User ID=test;Password=test334";
-
-        //Переменные для логирования
-        private static object sync = new object();
-        private static string fullText;
-
-        //Вставка данных в БД
-        public static void inputDataSQL(string queryString)
-        {
-            SqlConnection mySQLConnection = new SqlConnection(connString);
-
-            mySQLConnection.Open();
-
-            SqlCommand mySQLCommand = new SqlCommand(queryString, mySQLConnection);
-            mySQLCommand.ExecuteNonQuery();
-
-            mySQLConnection.Close();
-        }
-
-        //Вставка данных в БД
-        public static void inputDataSQL(List<string> queriesString)
-        {
-            SqlConnection mySQLConnection = new SqlConnection(connString);
-
-            mySQLConnection.Open();
-
-            foreach (string queryString in queriesString)
-            {
-                SqlCommand mySQLCommand = new SqlCommand(queryString, mySQLConnection);
-                mySQLCommand.ExecuteNonQuery();
-            }
-
-            mySQLConnection.Close();
-        }
-
-        //Чтение из БД
-        public System.Data.DataTable readDataSQL(string queryString)
-        {
-            //Переменная для результата запроса
-            System.Data.DataTable result = new System.Data.DataTable();
-
-            //Подключаемся к БД
-            SqlConnection mySQLConnection = new SqlConnection(connString);
-            SqlCommand mySQLCommand = new SqlCommand(queryString, mySQLConnection);
-            mySQLConnection.Open();
-
-            //Получаем данные из БД 
-            SqlDataAdapter adapterMy = new SqlDataAdapter(mySQLCommand);
-            adapterMy.Fill(result);
-
-            mySQLConnection.Close();
-            adapterMy.Dispose();
-
-            return result;
-        }
+        ////Переменные для логирования
+        //private static object sync = new object();
+        //private static string fullText;
 
         /// <summary>
         /// Формула «Дата вступления в законную силу» Изменяем effective_date в Таблица УИН (main_uin) 
         /// </summary>
         /// <param name="updateUIN">УИН по которому происходят изменения</param>
-        public void Update_effective_date(string updateUIN)
+        public static void Update_effective_date(string updateUIN)
         {
             System.Data.DataTable input_date_delivery_addressee = new System.Data.DataTable();// = result.Tables[0];
 
             //Получаем из базы Дату вручения адресату по УИНу
-            input_date_delivery_addressee = readDataSQL("SELECT date_delivery_addressee FROM main_uin WHERE uin='" + updateUIN + "'");
+            input_date_delivery_addressee = DB.readDataSQL("SELECT date_delivery_addressee FROM main_uin WHERE uin='" + updateUIN + "'");
 
             //Дата вручения адресату не пустая
             if (input_date_delivery_addressee.Rows[0][0] != System.DBNull.Value)
@@ -104,8 +47,6 @@ namespace post_service
                     if (Holiday(temp_date) == false && temp_date.DayOfWeek != DayOfWeek.Saturday && temp_date.DayOfWeek != DayOfWeek.Sunday) i--;
                 }
 
-
-
                 //Добавляем к строке дату Последний день подачи жалобы
                 strUPD += temp_date.ToString("d", enUS).Replace(".", string.Empty);
 
@@ -123,7 +64,7 @@ namespace post_service
 
                 try
                 {
-                    inputDataSQL(strUPD);
+                    DB.inputDataSQL(strUPD);
                 }
                 catch
                 {
@@ -137,9 +78,9 @@ namespace post_service
             System.Data.DataTable input_amount_recover = new System.Data.DataTable();
             System.Data.DataTable input_fssp_status = new System.Data.DataTable();
             //Получаем из базы Сумма для взыскания
-            input_amount_recover = readDataSQL("SELECT amount_recover FROM main_uin WHERE uin='" + updateUIN + "'");
+            input_amount_recover = DB.readDataSQL("SELECT amount_recover FROM main_uin WHERE uin='" + updateUIN + "'");
             //Получаем из базы Статусы ФССП по УИНу
-            input_fssp_status = readDataSQL("SELECT fssp_status FROM main_uin WHERE uin='" + updateUIN + "'");
+            input_fssp_status = DB.readDataSQL("SELECT fssp_status FROM main_uin WHERE uin='" + updateUIN + "'");
 
             //Проверяем что Сумма для взыская меньше или равна 0
             if (Convert.ToInt32(input_amount_recover.Rows[0][0]) <= 0)
@@ -161,7 +102,7 @@ namespace post_service
 
                 try
                 {
-                    inputDataSQL(strUPD);
+                    DB.inputDataSQL(strUPD);
                 }
                 catch
                 {
@@ -170,27 +111,26 @@ namespace post_service
             }
         }
 
-
         /// <summary>
         /// Формула «Сумма для взыскания» Изменяем amount_recover в Таблица УИН (main_uin)
         /// </summary>
         /// <param name="updateUIN"></param>
-        public void Update_amount_recover(string updateUIN)
+        public static void Update_amount_recover(string updateUIN)
         {
             //Получаем из базы данных все жалобы по УИНу
             System.Data.DataTable input_date = new System.Data.DataTable();
             //Получаем из базы данных Номер жалобы по порядку и Информация о результатах рассмотрения жалобы
-            input_date = readDataSQL("SELECT number_claim, results_claim FROM claim WHERE uin='" + updateUIN + "'");
+            input_date = DB.readDataSQL("SELECT number_claim, results_claim FROM claim WHERE uin='" + updateUIN + "'");
             //Получаем из базы данных Оплаты по УИНу
             System.Data.DataTable input_pays = new System.Data.DataTable();
-            //input_pays = readDataSQL("SELECT size_payment FROM payment WHERE uin='" + updateUIN + "'", connString);
-            input_pays = readDataSQL("SELECT SUM(cast(replace(size_payment, ',', '.') as money)) FROM payment WHERE uin='" + updateUIN + "'");
+            //input_pays = DB.readDataSQL("SELECT size_payment FROM payment WHERE uin='" + updateUIN + "'", connString);
+            input_pays = DB.readDataSQL("SELECT SUM(cast(replace(size_payment, ',', '.') as money)) FROM payment WHERE uin='" + updateUIN + "'");
             //Получаем из базы данных Размер штрафа по УИНу
             System.Data.DataTable input_fine_size = new System.Data.DataTable();
-            input_fine_size = readDataSQL("SELECT fine_size FROM main_uin WHERE uin='" + updateUIN + "'");
+            input_fine_size = DB.readDataSQL("SELECT fine_size FROM main_uin WHERE uin='" + updateUIN + "'");
             //Получаем статус ФССП
             System.Data.DataTable input_fssp_status = new System.Data.DataTable();
-            input_fssp_status = readDataSQL("SELECT fssp_status FROM main_uin WHERE uin='" + updateUIN + "'");
+            input_fssp_status = DB.readDataSQL("SELECT fssp_status FROM main_uin WHERE uin='" + updateUIN + "'");
             //считаем сумму оплат по УИНу
             Decimal sum_pay = 0;
             if (input_pays.Rows[0][0] != System.DBNull.Value)
@@ -214,7 +154,7 @@ namespace post_service
 
                     try
                     {
-                        inputDataSQL("UPDATE main_uin SET amount_recover='" + (0 - sum_pay).ToString().Replace(",", ".") + "' FROM main_uin WHERE uin='" + updateUIN + "'");
+                        DB.inputDataSQL("UPDATE main_uin SET amount_recover='" + (0 - sum_pay).ToString().Replace(",", ".") + "' FROM main_uin WHERE uin='" + updateUIN + "'");
                     }
                     catch
                     {
@@ -226,7 +166,7 @@ namespace post_service
                 {
                     //Получаем из базы данных Размер штрафа после обжалования (переквалификация) по УИНу
                     System.Data.DataTable input_amount_appeal = new System.Data.DataTable();
-                    input_amount_appeal = readDataSQL("SELECT amount_appeal FROM main_uin WHERE uin='" + updateUIN + "'");
+                    input_amount_appeal = DB.readDataSQL("SELECT amount_appeal FROM main_uin WHERE uin='" + updateUIN + "'");
                     //Размер штрафа после обжалования (переквалификации) не равен NULL
                     if (input_amount_appeal.Rows[0][0] != System.DBNull.Value)
                     {
@@ -235,7 +175,7 @@ namespace post_service
                         sum_pay = Convert.ToDecimal(input_amount_appeal.Rows[0][0]) - sum_pay;
                         try
                         {
-                            inputDataSQL("UPDATE main_uin SET amount_recover='" + sum_pay.ToString().Replace(",", ".") + "' FROM main_uin WHERE uin='" + updateUIN + "'");
+                            DB.inputDataSQL("UPDATE main_uin SET amount_recover='" + sum_pay.ToString().Replace(",", ".") + "' FROM main_uin WHERE uin='" + updateUIN + "'");
                         }
                         catch
                         {
@@ -248,7 +188,7 @@ namespace post_service
                         sum_pay = Convert.ToDecimal(input_fine_size.Rows[0][0]) - sum_pay;
                         try
                         {
-                            inputDataSQL("UPDATE main_uin SET amount_recover='" + sum_pay.ToString().Replace(",", ".") + "' FROM main_uin WHERE uin='" + updateUIN + "'");
+                            DB.inputDataSQL("UPDATE main_uin SET amount_recover='" + sum_pay.ToString().Replace(",", ".") + "' FROM main_uin WHERE uin='" + updateUIN + "'");
                         }
                         catch
                         {
@@ -263,7 +203,7 @@ namespace post_service
                 sum_pay = Convert.ToDecimal(input_fine_size.Rows[0][0]) - sum_pay;
                 try
                 {
-                    inputDataSQL("UPDATE main_uin SET amount_recover='" + sum_pay.ToString().Replace(",", ".") + "' FROM main_uin WHERE uin='" + updateUIN + "'");
+                    DB.inputDataSQL("UPDATE main_uin SET amount_recover='" + sum_pay.ToString().Replace(",", ".") + "' FROM main_uin WHERE uin='" + updateUIN + "'");
                 }
                 catch
                 {
@@ -292,7 +232,7 @@ namespace post_service
                     strUPD += " FROM main_uin WHERE uin = '" + updateUIN + "'";
                     try
                     {
-                        inputDataSQL(strUPD);
+                        DB.inputDataSQL(strUPD);
                     }
                     catch
                     {
@@ -310,16 +250,16 @@ namespace post_service
         /// Формула «Последний день подачи жалобы» Изменяем lastday_complaint в Таблица УИН (main_uin)
         /// </summary>
         /// <param name="updateUIN"></param>
-        public void Update_lastday_complaint(string updateUIN)
+        public static void Update_lastday_complaint(string updateUIN)
         {
             //Получаем из базы данных все жалобы по УИНу
             System.Data.DataTable input_date = new System.Data.DataTable();
             //Получаем из базы данных Номер жалобы по порядку, Информация о результатах рассмотрения жалобы и Дата вступления в силу после обжалования
-            input_date = readDataSQL("SELECT number_claim, results_claim, date_decision_claim FROM claim WHERE uin='" + updateUIN + "'");
+            input_date = DB.readDataSQL("SELECT number_claim, results_claim, date_decision_claim FROM claim WHERE uin='" + updateUIN + "'");
 
             //Получаем из базы данных Статус ФССП по УИНу
             System.Data.DataTable input_fssp_status = new System.Data.DataTable();
-            input_fssp_status = readDataSQL("SELECT fssp_status FROM main_uin WHERE uin='" + updateUIN + "'");
+            input_fssp_status = DB.readDataSQL("SELECT fssp_status FROM main_uin WHERE uin='" + updateUIN + "'");
 
             //Количество жалоб по УИНу > 0
             //if (input_date.Rows[0][0] != System.DBNull.Value)
@@ -355,7 +295,7 @@ namespace post_service
                         //Срок для оплаты штрафа после обжалования = NULL
                         try
                         {
-                            inputDataSQL("UPDATE claim SET last_time_payment_decision = NULL FROM claim WHERE number_claim='" + Convert.ToInt32(input_date.Rows[input_date.Rows.Count - 1][0]) + "'");
+                            DB.inputDataSQL("UPDATE claim SET last_time_payment_decision = NULL FROM claim WHERE number_claim='" + Convert.ToInt32(input_date.Rows[input_date.Rows.Count - 1][0]) + "'");
                         }
                         catch
                         {
@@ -376,7 +316,7 @@ namespace post_service
                             try
                             {
                                 //Меняем запись в последней Жалобе по УИНу
-                                inputDataSQL("UPDATE claim SET last_time_payment_decision = '" + temp_date.AddDays(60) + "' From claim WHERE number_claim='" + Convert.ToInt32(input_date.Rows[input_date.Rows.Count - 1][0]) + "'");
+                                DB.inputDataSQL("UPDATE claim SET last_time_payment_decision = '" + temp_date.AddDays(60) + "' From claim WHERE number_claim='" + Convert.ToInt32(input_date.Rows[input_date.Rows.Count - 1][0]) + "'");
 
                                 //Меняем в УИНе Плановая дата направления в ФССП = Срок для оплаты штрафа после обжалования + 10 дней, Последний день подачи жалобы = Дата вступления в силу после обдалования - 1 день, Дата вступления в законную силу = Дата вступления в силу после обжалования, Срок для оплаты штрафа = Срок для оплаты штрафа после обжалования
                                 strUPD = "UPDATE main_uin SET fssp_plane_date = '" + temp_date.AddDays(70) + "', lastday_complaint = '" + temp_date.AddDays(59) + "', effective_date = '" + temp_date + "', timelimit_payment = '" + temp_date.AddDays(60) + "'";
@@ -403,7 +343,7 @@ namespace post_service
 
                 try
                 {
-                    inputDataSQL(strUPD);
+                    DB.inputDataSQL(strUPD);
                 }
                 catch
                 {
@@ -412,12 +352,15 @@ namespace post_service
             }
         }
 
-
-        //Поиск праздников
-        internal bool Holiday(DateTime mydate)
+        /// <summary>
+        /// Поиск праздников
+        /// </summary>
+        /// <param name="mydate"></param>
+        /// <returns></returns>
+        internal static bool Holiday(DateTime mydate)
         {
             System.Data.DataTable dataTable = new System.Data.DataTable();
-            dataTable = readDataSQL("SELECT holidays_date FROM holidays Where holidays_date = '" + mydate + "'");
+            dataTable = DB.readDataSQL("SELECT holidays_date FROM holidays Where holidays_date = '" + mydate + "'");
             if (dataTable.Rows.Count != 0)
             {
                 return (true);
@@ -428,116 +371,115 @@ namespace post_service
             }
         }
 
-        //Интеграционный модуль ПОЧТА РОССИИ
-        public void ParsePost(string SPI, string UIN, string filename, int count)
-        {
+        ////Интеграционный модуль ПОЧТА РОССИИ
+        //public static void ParsePost(string SPI, string UIN, string filename, int count)
+        //{
 
-            var client = new RussianPost.Tracking.SingleAccessClient();
-            var rpo = RussianPost.Tracking.Rpo.Default;
-            string inputUIN;
-            List<string> post_record_ist = new List<string>(); // создание списка
-            string queryInput;
-
-
-            try
-            {
-                rpo.Barcode = SPI;
-                inputUIN = UIN;
-                var records = client.GetOperationHistory(rpo);
+        //    var client = new RussianPost.Tracking.SingleAccessClient();
+        //    var rpo = RussianPost.Tracking.Rpo.Default;
+        //    string inputUIN;
+        //    List<string> post_record_ist = new List<string>(); // создание списка
+        //    string queryInput;
 
 
-                foreach (var record in records)
-                {
-
-                    if (record.OperationParameters.OperType.Name == "Вручение" & (record.OperationParameters.OperAttr.Id == 1 | record.OperationParameters.OperAttr.Id == 2 | record.OperationParameters.OperAttr.Id == 3 | record.OperationParameters.OperAttr.Id == 4 | record.OperationParameters.OperAttr.Id == 5 | record.OperationParameters.OperAttr.Id == 6 | record.OperationParameters.OperAttr.Id == 7 | record.OperationParameters.OperAttr.Id == 8 | record.OperationParameters.OperAttr.Id == 9 | record.OperationParameters.OperAttr.Id == 10 | record.OperationParameters.OperAttr.Id == 11 | record.OperationParameters.OperAttr.Id == 12 | record.OperationParameters.OperAttr.Id == 13 | record.OperationParameters.OperAttr.Id == 14))
-                    {
-                        try
-                        {
-                            //Формируем строку и обновляем данные в БД
-                            queryInput = "update main_uin set date_delivery_addressee = '" + record.OperationParameters.OperDate + "' where spi = '" + rpo.Barcode + "'";
-                            inputDataSQL(queryInput);
+        //    try
+        //    {
+        //        rpo.Barcode = SPI;
+        //        inputUIN = UIN;
+        //        var records = client.GetOperationHistory(rpo);
 
 
-                            //Вывод в лог
-                            fullText = string.Format("[{0:dd.MM.yyy HH:mm:ss.fff}] {1} {2} {3}\r\n",
-                            DateTime.Now, "Успешно обновлено - УИН " + UIN, "ШПИ " + rpo.Barcode, "Дата " + record.OperationParameters.OperDate);
-                            lock (sync)
-                            {
-                                File.AppendAllText(filename, fullText, Encoding.GetEncoding("Windows-1251"));
-                            }
-                            Console.Write(fullText);
+        //        foreach (var record in records)
+        //        {
 
-                            //Прогоняем формулы
-                            Update_effective_date(inputUIN);
-                            Console.Write("Формула 1 - ОК; \r\n");
-                            Update_amount_recover(inputUIN);
-                            Console.Write("Формула 2 - ОК; \r\n");
-                            Update_lastday_complaint(inputUIN);
-                            Console.Write("Формула 3 - ОК; \r\n");
-                        }
-                        catch
-                        {
-                            //Вывод в лог
-                            fullText = string.Format("[{0:dd.MM.yyy HH:mm:ss.fff}] {1} \r\n", DateTime.Now, "Проблема с ШПИ: " + rpo.Barcode);
-                            lock (sync)
-                            {
-                                File.AppendAllText(filename, fullText, Encoding.GetEncoding("Windows-1251"));
-                            }
-                            Console.Write(fullText);
-                        }
-                    }
-                    else if (record.OperationParameters.OperType.Name == "Возврат" & record.OperationParameters.OperAttr.Id == 1)
-                    {
-                        try
-                        {
-                            //Формируем строку и обновляем данные в БД
-                            queryInput = "update main_uin set date_delivery_addressee = '" + record.OperationParameters.OperDate + "' where spi = '" + rpo.Barcode + "'";
-                            inputDataSQL(queryInput);
+        //            if (record.OperationParameters.OperType.Name == "Вручение" & (record.OperationParameters.OperAttr.Id == 1 | record.OperationParameters.OperAttr.Id == 2 | record.OperationParameters.OperAttr.Id == 3 | record.OperationParameters.OperAttr.Id == 4 | record.OperationParameters.OperAttr.Id == 5 | record.OperationParameters.OperAttr.Id == 6 | record.OperationParameters.OperAttr.Id == 7 | record.OperationParameters.OperAttr.Id == 8 | record.OperationParameters.OperAttr.Id == 9 | record.OperationParameters.OperAttr.Id == 10 | record.OperationParameters.OperAttr.Id == 11 | record.OperationParameters.OperAttr.Id == 12 | record.OperationParameters.OperAttr.Id == 13 | record.OperationParameters.OperAttr.Id == 14))
+        //            {
+        //                try
+        //                {
+        //                    //Формируем строку и обновляем данные в БД
+        //                    queryInput = "update main_uin set date_delivery_addressee = '" + record.OperationParameters.OperDate + "' where spi = '" + rpo.Barcode + "'";
+        //                    DB.inputDataSQL(queryInput);
 
 
-                            //Вывод в лог
-                            fullText = string.Format("[{0:dd.MM.yyy HH:mm:ss.fff}] {1} {2} {3}\r\n",
-                            DateTime.Now, "Успешно обновлено - УИН " + UIN, "ШПИ " + rpo.Barcode, "Дата " + record.OperationParameters.OperDate);
-                            lock (sync)
-                            {
-                                File.AppendAllText(filename, fullText, Encoding.GetEncoding("Windows-1251"));
-                            }
-                            Console.Write(fullText);
+        //                    //Вывод в лог
+        //                    fullText = string.Format("[{0:dd.MM.yyy HH:mm:ss.fff}] {1} {2} {3}\r\n",
+        //                    DateTime.Now, "Успешно обновлено - УИН " + UIN, "ШПИ " + rpo.Barcode, "Дата " + record.OperationParameters.OperDate);
+        //                    lock (sync)
+        //                    {
+        //                        File.AppendAllText(filename, fullText, Encoding.GetEncoding("Windows-1251"));
+        //                    }
+        //                    Console.Write(fullText);
 
-                            //Прогоняем формулы
-                            Update_effective_date(inputUIN);
-                            Console.Write("Формула 1 - ОК; \r\n");
-                            Update_amount_recover(inputUIN);
-                            Console.Write("Формула 2 - ОК; \r\n");
-                            Update_lastday_complaint(inputUIN);
-                            Console.Write("Формула 3 - ОК; \r\n");
-                        }
-                        catch
-                        {
-                            //Вывод в лог
-                            fullText = string.Format("[{0:dd.MM.yyy HH:mm:ss.fff}] {1} \r\n", DateTime.Now, "Проблема с ШПИ: " + rpo.Barcode);
-                            lock (sync)
-                            {
-                                File.AppendAllText(filename, fullText, Encoding.GetEncoding("Windows-1251"));
-                            }
-                            Console.Write(fullText);
-                        }
-                    }
-                }
+        //                    //Прогоняем формулы
+        //                    Update_effective_date(inputUIN);
+        //                    Console.Write("Формула 1 - ОК; \r\n");
+        //                    Update_amount_recover(inputUIN);
+        //                    Console.Write("Формула 2 - ОК; \r\n");
+        //                    Update_lastday_complaint(inputUIN);
+        //                    Console.Write("Формула 3 - ОК; \r\n");
+        //                }
+        //                catch
+        //                {
+        //                    //Вывод в лог
+        //                    fullText = string.Format("[{0:dd.MM.yyy HH:mm:ss.fff}] {1} \r\n", DateTime.Now, "Проблема с ШПИ: " + rpo.Barcode);
+        //                    lock (sync)
+        //                    {
+        //                        File.AppendAllText(filename, fullText, Encoding.GetEncoding("Windows-1251"));
+        //                    }
+        //                    Console.Write(fullText);
+        //                }
+        //            }
+        //            else if (record.OperationParameters.OperType.Name == "Возврат" & record.OperationParameters.OperAttr.Id == 1)
+        //            {
+        //                try
+        //                {
+        //                    //Формируем строку и обновляем данные в БД
+        //                    queryInput = "update main_uin set date_delivery_addressee = '" + record.OperationParameters.OperDate + "' where spi = '" + rpo.Barcode + "'";
+        //                    DB.inputDataSQL(queryInput);
 
 
-            }
-            catch
-            {
-                //Вывод в лог
-                fullText = string.Format("[{0:dd.MM.yyy HH:mm:ss.fff}] {1} \r\n", DateTime.Now, "Проблема с ШПИ: " + rpo.Barcode);
-                lock (sync)
-                {
-                    File.AppendAllText(filename, fullText, Encoding.GetEncoding("Windows-1251"));
-                }
+        //                    //Вывод в лог
+        //                    fullText = string.Format("[{0:dd.MM.yyy HH:mm:ss.fff}] {1} {2} {3}\r\n",
+        //                    DateTime.Now, "Успешно обновлено - УИН " + UIN, "ШПИ " + rpo.Barcode, "Дата " + record.OperationParameters.OperDate);
+        //                    lock (sync)
+        //                    {
+        //                        File.AppendAllText(filename, fullText, Encoding.GetEncoding("Windows-1251"));
+        //                    }
+        //                    Console.Write(fullText);
 
-            }
-        }
+        //                    //Прогоняем формулы
+        //                    Update_effective_date(inputUIN);
+        //                    Console.Write("Формула 1 - ОК; \r\n");
+        //                    Update_amount_recover(inputUIN);
+        //                    Console.Write("Формула 2 - ОК; \r\n");
+        //                    Update_lastday_complaint(inputUIN);
+        //                    Console.Write("Формула 3 - ОК; \r\n");
+        //                }
+        //                catch
+        //                {
+        //                    //Вывод в лог
+        //                    fullText = string.Format("[{0:dd.MM.yyy HH:mm:ss.fff}] {1} \r\n", DateTime.Now, "Проблема с ШПИ: " + rpo.Barcode);
+        //                    lock (sync)
+        //                    {
+        //                        File.AppendAllText(filename, fullText, Encoding.GetEncoding("Windows-1251"));
+        //                    }
+        //                    Console.Write(fullText);
+        //                }
+        //            }
+        //        }
+
+
+        //    }
+        //    catch
+        //    {
+        //        //Вывод в лог
+        //        fullText = string.Format("[{0:dd.MM.yyy HH:mm:ss.fff}] {1} \r\n", DateTime.Now, "Проблема с ШПИ: " + rpo.Barcode);
+        //        lock (sync)
+        //        {
+        //            File.AppendAllText(filename, fullText, Encoding.GetEncoding("Windows-1251"));
+        //        }
+
+        //    }
+        //}
     }
-
 }

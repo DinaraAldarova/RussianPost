@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace post_service.Models.Parameters
 {
     /// <summary>
-    /// 
+    /// Используется для атрибутов, содержащих название и id элемента определенной категории
     /// </summary>
     public class Category
     {
@@ -32,7 +28,7 @@ namespace post_service.Models.Parameters
         }
 
         /// <summary>
-        /// 
+        /// Создание параметра
         /// </summary>
         /// <param name="id">Код</param>
         /// <param name="name">Название</param>

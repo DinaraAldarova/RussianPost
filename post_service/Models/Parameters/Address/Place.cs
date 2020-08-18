@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace post_service.Models.Parameters.Address
@@ -32,7 +28,7 @@ namespace post_service.Models.Parameters.Address
         }
 
         /// <summary>
-        /// 
+        /// Создание параметра
         /// </summary>
         /// <param name="index">Почтовый индекс места</param>
         /// <param name="description">Адрес и/или название места</param>
@@ -43,7 +39,7 @@ namespace post_service.Models.Parameters.Address
         }
 
         /// <summary>
-        /// Создание параметров из XML-структуры места
+        /// Создание параметра из XML-структуры места
         /// </summary>
         /// <param name="Place">XML-структура места</param>
         public Place(XmlNode Place)
@@ -67,7 +63,7 @@ namespace post_service.Models.Parameters.Address
         }
 
         /// <summary>
-        /// Создание параметров по информации, предоставленной в пакетном запросе
+        /// Создание параметра по информации, предоставленной в пакетном запросе
         /// </summary>
         /// <param name="IndexOper">Почтовый индекс места проведения операции</param>
         public Place(string IndexOper)

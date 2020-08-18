@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace post_service.Models.Parameters.Address
@@ -50,7 +46,7 @@ namespace post_service.Models.Parameters.Address
         }
 
         /// <summary>
-        /// 
+        /// Создание параметра
         /// </summary>
         /// <param name="id">Код страны</param>
         /// <param name="code2A">Двухбуквенный идентификатор страны</param>

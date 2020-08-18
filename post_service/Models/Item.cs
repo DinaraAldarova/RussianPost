@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
-using post_service.Models.Parameters;
-using post_service.Models.Parameters.Address;
+using post_service.Code;
 
 namespace post_service.Models
 {
@@ -52,10 +48,10 @@ namespace post_service.Models
         }
 
         /// <summary>
-        /// 
+        /// Создание объекта по ШПИ и списку операций над отправлением
         /// </summary>
         /// <param name="barcode">Идентификатор отправления</param>
-        /// <param name="operations">Информация по операциям над отправлением</param>
+        /// <param name="operations">Список операций над отправлением</param>
         public Item(string barcode, List<Operation> operations)
         {
             Barcode = barcode;
@@ -66,9 +62,9 @@ namespace post_service.Models
         }
 
         /// <summary>
-        /// Создание параметров из XML-структуры категории
+        /// Создание объекта по XML-структуре
         /// </summary>
-        /// <param name="Item">XML-структура категории</param>
+        /// <param name="Item">XML-структура</param>
         public Item(XmlNode Item)
         {
             isReady = true;
@@ -77,6 +73,7 @@ namespace post_service.Models
             Barcode = Item.Attributes["Barcode"].Value;
             operations = new List<Operation>();
 
+            //Обработка ошибок
             if (Item.FirstChild.Name == "ns3:Error")
             {
                 switch (Item.FirstChild.Attributes["ErrorTypeID"].Value)
@@ -125,6 +122,7 @@ namespace post_service.Models
                 return;
             }
 
+            //Запись информации об операциях
             foreach (XmlNode xmlOperation in Item)
             {
                 string OperTypeID = "";
