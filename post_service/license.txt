@@ -1,0 +1,8 @@
+﻿Для написания SOAP-запросов использовала статью
+https://victorz.ru/20180805729
+
+Работу с XML в C# смотрела здесь
+https://metanit.com/sharp/tutorial/16.2.php
+
+Работу с библиотекой log4net смотрела здесь
+https://habr.com/ru/post/310770/
