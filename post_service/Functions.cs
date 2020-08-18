@@ -13,7 +13,7 @@ namespace post_service
     public class Functions
     {
         //Подключение к БД
-        public string connString = "Data Source=172.16.80.13,1433;Initial Catalog=ap;User ID=sa;Password=Admin1421";
+        public string connString = "Data Source=172.16.80.13,1433;Initial Catalog=ap;User ID=test;Password=test333";
 
         //Переменные для логирования
         private static object sync = new object();
