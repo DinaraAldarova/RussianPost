@@ -1,9 +1,5 @@
 ﻿using post_service.Models.Parameters.Address;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace post_service.Models.Parameters
@@ -51,7 +47,7 @@ namespace post_service.Models.Parameters
         }
 
         /// <summary>
-        /// 
+        /// Создание параметров
         /// </summary>
         /// <param name="destinationAddress">Адресные данные места назначения отправления</param>
         /// <param name="operationAddress">Адресные данные места проведения операции над отправлением</param>

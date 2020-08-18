@@ -1,18 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using post_service.Code;
 
 namespace post_service.Models
 {
+    /// <summary>
+    /// Хранение билета на получение информации об отправлениях
+    /// </summary>
     public class Ticket
     {
+        /// <summary>
+        /// Номер билета
+        /// </summary>
         public string Value { get; private set; }
+
+        /// <summary>
+        /// Дата получения билета
+        /// </summary>
         public DateTime DateTime { get; private set; }
+
+        /// <summary>
+        /// Имя пользователя, получившего билет
+        /// </summary>
         public string Name { get; private set; }
 
+        /// <summary>
+        /// Создание билета по его номеру
+        /// </summary>
+        /// <param name="value">Номер билета</param>
         public Ticket(string value)
         {
             Value = value;
@@ -28,26 +43,29 @@ namespace post_service.Models
             DateTime = new DateTime(year, month, day, hour, minute, second, millisecond);
         }
 
-        public static string TicketToString(Ticket ticket)
+        /// <summary>
+        /// Конвертация в строку
+        /// </summary>
+        /// <param name="ticket">Объект, содержащий номер билета</param>
+        /// <returns>Строка, содержащая номер билета</returns>
+        public static string ConvertToString(Ticket ticket)
         {
             return ticket.Value;
         }
 
-        public static Ticket StringToTicket(string code)
+        /// <summary>
+        /// Конвертация из строки
+        /// </summary>
+        /// <param name="value">Строка, содержащая номер билета</param>
+        /// <returns>Объект, содержащий номер билета</returns>
+        public static Ticket ConvertFromString(string value)
         {
-            return new Ticket(code);
-        }
-
-        public static void WriteTicketsToFile(List<Ticket> tickets, string path)
-        {
-            File.WriteAllLines(path, tickets.ConvertAll(new Converter<Ticket, string>(TicketToString)));
-        }
-
-        public static List<Ticket> ReadTicketsFromFile(string path)
-        {
-            List<string> strTickets = new List<string>(File.ReadAllLines(path));
-            List<Ticket> tickets = strTickets.ConvertAll(new Converter<string, Ticket>(StringToTicket));
-            return tickets;
+            if (Regex.IsMatch(value, "[0-9]{17}[A-Z]{14}"))
+            {
+                return new Ticket(value);
+            }
+            Logger.Log.Error($"При чтении файла с билетами встречена строка, не соответствующая формату: {code}");
+            return new Ticket("");
         }
     }
 }

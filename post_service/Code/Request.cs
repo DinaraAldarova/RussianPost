@@ -1,15 +1,15 @@
 ﻿using post_service.Models;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
-namespace post_service
+namespace post_service.Code
 {
+    /// <summary>
+    /// Реализация запросов к Почте России
+    /// </summary>
     static class Request
     {
         /// <summary>
@@ -20,6 +20,7 @@ namespace post_service
         /// <returns>Информация о конкретном отправлении</returns>
         public static List<Operation> getOperationHistory(Barcode barcode, AuthInfo auth)
         {
+            //Тело запроса
             string textRequest =
                 $@"<soap:Envelope xmlns:soap=""http://www.w3.org/2003/05/soap-envelope""
                     xmlns:oper=""http://russianpost.org/operationhistory""
@@ -41,33 +42,32 @@ namespace post_service
                         </oper:getOperationHistory>
                     </soap:Body>
                 </soap:Envelope>";
+
+            //Конвертация запроса в необходимую кодировку
             byte[] byteUnicode = Encoding.Unicode.GetBytes(textRequest);
             byte[] byteUTF8 = Encoding.Convert(Encoding.Unicode, Encoding.UTF8, byteUnicode);
             textRequest = Encoding.UTF8.GetString(byteUTF8);
 
-            string _url = @"https://tracking.russianpost.ru/rtm34"; // URL SOAP API-сервиса
-            //string _method = @"getOperationHistory​"; // Метод, который вызывается на API сервисе
-            _url = _url.Trim('/').Trim('\\'); // в конце адреса удалить слэш, если он имеется
-
+            //Заголовок запроса
+            string _url = @"https://tracking.russianpost.ru/rtm34"; //url сервиса
+            _url = _url.Trim('/').Trim('\\'); //удаление слеша в конце адреса
             WebRequest _request = HttpWebRequest.Create(_url);
-            //все эти настройки можно взять со страницы описания веб-сервиса
             _request.Method = "POST";
             _request.ContentType = "application/soap+xml;charset=UTF-8";
             _request.ContentLength = textRequest.Length;
-            //_request.Headers.Add("SOAPAction", _url + @"/" + _method);
-
-            // пишем тело
+            
+            //Отправка запроса
             StreamWriter _streamWriter = new StreamWriter(_request.GetRequestStream());
             _streamWriter.Write(textRequest);
             _streamWriter.Close();
 
-            // читаем тело
+            //Получение ответа
             WebResponse _response = _request.GetResponse();
             StreamReader _streamReader = new StreamReader(_response.GetResponseStream());
-
-            //Разбор XML
             XmlDocument document = new XmlDocument();
             document.LoadXml(_streamReader.ReadToEnd());
+
+            //Разбор XML
             XmlNode envelope = document.DocumentElement;
             XmlNode body = envelope.FirstChild;
             XmlNode getOperationHistoryResponse = body.FirstChild;
@@ -91,12 +91,14 @@ namespace post_service
         /// <returns>Билет на подготовку информации</returns>
         public static Ticket getTicket(List<Barcode> barcodes, AuthInfo auth)
         {
-            //Переименовать переменные barcodes - их легко спутать
-            string strBarcodes = "";
+            //Формирование xml-списка с ШПИ
+            string xmlBarcodes = "";
             foreach (Barcode barcode in barcodes)
             {
-                strBarcodes += $@"<fcl:Item Barcode = ""{barcode.Code}""/>";
+                xmlBarcodes += $@"<fcl:Item Barcode = ""{barcode.Code}""/>";
             }
+
+            //Тело запроса
             string textRequest =
                 $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" 
                     xmlns:pos=""http://fclient.russianpost.org/postserver""
@@ -105,7 +107,7 @@ namespace post_service
                     <soapenv:Body>
                         <pos:ticketRequest>
                             <request>
-                                {strBarcodes}
+                                {xmlBarcodes}
                             </request>
                             <login>{auth.Login}</login>
                             <password>{auth.Password}</password>
@@ -113,34 +115,33 @@ namespace post_service
                         </pos:ticketRequest>
                     </soapenv:Body>
                 </soapenv:Envelope>";
+
+            //Конвертация запроса в необходимую кодировку
             byte[] byteUnicode = Encoding.Unicode.GetBytes(textRequest);
             byte[] byteUTF8 = Encoding.Convert(Encoding.Unicode, Encoding.UTF8, byteUnicode);
             textRequest = Encoding.UTF8.GetString(byteUTF8);
 
-            string _url = @"https://tracking.russianpost.ru/fc"; // URL SOAP API-сервиса
-            //string _method = @"getOperationHistory​"; // Метод, который вызывается на API сервисе
-            _url = _url.Trim('/').Trim('\\'); // в конце адреса удалить слэш, если он имеется
-
+            //Заголовок запроса
+            string _url = @"https://tracking.russianpost.ru/fc"; //url сервиса
+            _url = _url.Trim('/').Trim('\\'); //удаление слеша в конце адреса
             WebRequest _request = HttpWebRequest.Create(_url);
-            //все эти настройки можно взять со страницы описания веб-сервиса
             _request.Method = "POST";
             _request.ContentType = "text/xml;charset=UTF-8";
             _request.ContentLength = textRequest.Length;
-            //_request.Headers.Add("SOAPAction", _url + @"/" + _method);
 
-            // пишем тело
+            //Отправка запроса
             StreamWriter _streamWriter = new StreamWriter(_request.GetRequestStream());
             _streamWriter.Write(textRequest);
             _streamWriter.Close();
 
-            // читаем тело
+            //Получение ответа
             WebResponse _response = _request.GetResponse();
             StreamReader _streamReader = new StreamReader(_response.GetResponseStream());
-
             XmlDocument document = new XmlDocument();
             document.LoadXml(_streamReader.ReadToEnd());
-            Ticket ticket = new Ticket(document.DocumentElement.InnerText);
 
+            //Создание билета, хранящего данные из XML
+            Ticket ticket = new Ticket(document.DocumentElement.InnerText);
             return ticket;
         }
 
@@ -152,6 +153,7 @@ namespace post_service
         /// <returns>Информация об отправлениях из списка</returns>
         public static List<Item> getResponseByTicket(Ticket ticket, AuthInfo auth)
         {
+            //Тело запроса
             string textRequest =
                 $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" 
                     xmlns:pos=""http://fclient.russianpost.org/postserver"">
@@ -164,33 +166,32 @@ namespace post_service
                         </pos:answerByTicketRequest>
                     </soapenv:Body>
                 </soapenv:Envelope>";
+
+            //Конвертация запроса в необходимую кодировку
             byte[] byteUnicode = Encoding.Unicode.GetBytes(textRequest);
             byte[] byteUTF8 = Encoding.Convert(Encoding.Unicode, Encoding.UTF8, byteUnicode);
             textRequest = Encoding.UTF8.GetString(byteUTF8);
 
-            string _url = @"https://tracking.russianpost.ru/fc"; // URL SOAP API-сервиса
-            //string _method = @"getOperationHistory​"; // Метод, который вызывается на API сервисе
-            _url = _url.Trim('/').Trim('\\'); // в конце адреса удалить слэш, если он имеется
-
+            //Заголовок запроса
+            string _url = @"https://tracking.russianpost.ru/fc"; //url сервиса
+            _url = _url.Trim('/').Trim('\\'); //удаление слеша в конце адреса
             WebRequest _request = HttpWebRequest.Create(_url);
-            //все эти настройки можно взять со страницы описания веб-сервиса
             _request.Method = "POST";
             _request.ContentType = "text/xml;charset=UTF-8";
             _request.ContentLength = textRequest.Length;
-            //_request.Headers.Add("SOAPAction", _url + @"/" + _method);
 
-            // пишем тело
+            //Отправка запроса
             StreamWriter _streamWriter = new StreamWriter(_request.GetRequestStream());
             _streamWriter.Write(textRequest);
             _streamWriter.Close();
 
-            // читаем тело
+            //Получение ответа
             WebResponse _response = _request.GetResponse();
             StreamReader _streamReader = new StreamReader(_response.GetResponseStream());
-
-            //Разбор XML
             XmlDocument document = new XmlDocument();
             document.LoadXml(_streamReader.ReadToEnd());
+
+            //Разбор XML
             XmlNode envelope = document.DocumentElement;
             XmlNode body = envelope.FirstChild;
             XmlNode answerByTicketResponse = body.FirstChild;
@@ -204,48 +205,6 @@ namespace post_service
                 items.Add(item);
             }
             return items;
-        }
-
-        /// <summary>
-        /// Формирование запроса к базе денных
-        /// </summary>
-        /// <param name="items">Информация об отправлении</param>
-        /// <returns></returns>
-        public static string getQuery(Item item)
-        {
-            string query = "";
-            if (item.operations.Count > 0)
-            {
-                Operation lastOperation = item.operations[item.operations.Count - 1];
-                if (lastOperation.OperationParameters.OperType.Id == "2")
-                //Вручение
-                {
-                    int operAttr = Convert.ToInt32(lastOperation.OperationParameters.OperAttr.Id);
-                    if (operAttr >= 1 && operAttr <= 14)
-                    {
-                        //преобразовать дату
-                        DateTime dateTime = DateTime.ParseExact(lastOperation.OperationParameters.OperDate, "dd.MM.yyyy HH:mm:ss", null);
-                        query = "update main_uin set date_delivery_addressee = '"
-                                           + dateTime.ToString("yyyy.MM.dd")
-                                           + "' where spi = '"
-                                           + item.Barcode
-                                           + "'";
-                    }
-                }
-                else if (lastOperation.OperationParameters.OperType.Id == "3" && lastOperation.OperationParameters.OperAttr.Id == "1")
-                //Возврат, истек срок хранения
-                {
-                    //преобразовать дату
-                    DateTime dateTime = DateTime.ParseExact(lastOperation.OperationParameters.OperDate, "dd.MM.yyyy HH:mm:ss", null);
-                    //запрос что, одинаковый???
-                    query = "update main_uin set date_delivery_addressee = '"
-                                       + dateTime.ToString("yyyy.MM.dd")
-                                       + "' where spi = '"
-                                       + item.Barcode
-                                       + "'";
-                }
-            }
-            return query;
         }
     }
 }

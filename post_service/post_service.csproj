@@ -85,8 +85,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Functions.cs" />
-    <Compile Include="Logger.cs" />
+    <Compile Include="Code\DB.cs" />
+    <Compile Include="Code\DebugFiles.cs" />
+    <Compile Include="Code\Functions.cs" />
+    <Compile Include="Code\Logger.cs" />
     <Compile Include="Models\Item.cs" />
     <Compile Include="Models\Parameters\Address\Place.cs" />
     <Compile Include="Models\Barcode.cs" />
@@ -99,7 +101,7 @@
     <Compile Include="Models\Ticket.cs" />
     <Compile Include="Models\Parameters\AddressParameters.cs" />
     <Compile Include="Models\Parameters\Address\Country.cs" />
-    <Compile Include="AuthInfo.cs" />
+    <Compile Include="Code\AuthInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
@@ -112,7 +114,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Request.cs" />
+    <Compile Include="Code\Request.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

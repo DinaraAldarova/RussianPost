@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace post_service.Models.Parameters
@@ -92,7 +88,7 @@ namespace post_service.Models.Parameters
         }
 
         /// <summary>
-        /// 
+        /// Создание параметров
         /// </summary>
         /// <param name="barcode">Идентификатор почтового отправления, текущий для данной операции</param>
         /// <param name="internum">Служебная информация, идентифицирующая отправление</param>
