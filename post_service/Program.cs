@@ -19,6 +19,34 @@ namespace post_service
         {
             List<Barcode> barcodes = new List<Barcode>();
 
+            /******************************************************/
+
+
+            Functions myFun = new Functions();
+
+            //Строка запроса SQL
+            string querypost = "SELECT main_uin.spi,uin from main_uin where (date_ruling between '01.01.2019' and GETDATE() and date_delivery_addressee is null) or (date_ruling between '01.01.2019' and GETDATE() and date_delivery_addressee = '01.01.0001')";
+            DataTable postDT = myFun.readDataSQL(querypost);
+
+            int count = postDT.Rows.Count;
+            int j = 0;
+
+            try
+            {
+                foreach (DataRow row in postDT.Rows)
+                {
+                    string SPI = row[0].ToString();
+                    string UIN = row[1].ToString();
+                    
+                    j++;
+                }
+            }
+            catch
+            {
+            }
+
+
+            /******************************************************/
 
 
             Logger.Log.Info(string.Format("Получено {0} ШПИ", barcodes.Count));

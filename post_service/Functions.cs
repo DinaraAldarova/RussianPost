@@ -19,7 +19,10 @@ namespace post_service
         private static object sync = new object();
         private static string fullText;
 
-        //Вставка данных в БД
+        /// <summary>
+        /// Один запрос к БД
+        /// </summary>
+        /// <param name="queryString">Текст запроса</param>
         public static void inputDataSQL(string queryString)
         {
             SqlConnection mySQLConnection = new SqlConnection(connString);
@@ -32,7 +35,10 @@ namespace post_service
             mySQLConnection.Close();
         }
 
-        //Вставка данных в БД
+        /// <summary>
+        /// Несколько запросов к БД
+        /// </summary>
+        /// <param name="queriesString">Текст запросов</param>
         public static void inputDataSQL(List<string> queriesString)
         {
             SqlConnection mySQLConnection = new SqlConnection(connString);
