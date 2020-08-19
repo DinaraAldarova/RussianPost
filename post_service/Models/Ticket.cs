@@ -64,7 +64,7 @@ namespace post_service.Models
             {
                 return new Ticket(value);
             }
-            Logger.Log.Error($"При чтении файла с билетами встречена строка, не соответствующая формату: {code}");
+            Logger.Log.Error($"При чтении файла с билетами встречена строка, не соответствующая формату: {value}");
             return new Ticket("");
         }
     }
